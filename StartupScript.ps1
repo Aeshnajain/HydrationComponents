@@ -27,10 +27,10 @@ Param
     [int]$MaxWaitForKillTimeSec = 120,
 
     [Parameter(Mandatory=$false)]
-    [string]$HydrationConfigSettings="emptyconfig"
+    [string]$HydrationConfigSettings="emptyconfig",
 
     [Parameter(Mandatory=$false)]
-    [string]$CustomConfigSettings="emptyconfig"
+    [string]$CustomConfigSettings="emptyconfig",
 
     [Parameter(Mandatory=$false)]
     [string]$HydGithubUrl="emptyconfig"
