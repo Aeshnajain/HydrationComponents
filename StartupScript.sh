@@ -442,7 +442,7 @@ function Prepare_Env
     for (( i=0; i<${#RECOVERY_INFOFILE_CONTENT}; i++ )); do
         if [[ ${RECOVERY_INFOFILE_CONTENT:$i:1} == "#" ]]
         then
-            echo "${RECOVERY_INFOFILE_CONTENT:$start:$Length_KeyValuePair}">>"$RECOVERY_INFO_FILE"
+            echo "${RECOVERY_INFOFILE_CONTENT:$StartIndex:$Length_KeyValuePair}">>"$RECOVERY_INFO_FILE"
             ((Length_KeyValuePair=0))
             ((StartIndex=i+1))
         else
