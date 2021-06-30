@@ -41,7 +41,7 @@ export RECOVERY_INFO_FILE=""
 export HOSTINFO_FILE=""
 export HYDRATION_CONFIG_SETTINGS="emptyconfig"
 export CUSTOM_CONFIG_SETTINGS="emptyconfig"
-
+export RECOVERY_INFOFILE_CONTENT=""
 #
 # Status global variable
 # 
@@ -58,6 +58,7 @@ _HOST_ID_=""
 _SCENARIO_=""
 _SCENARIO_RECOVERY_="recovery"
 _SCENARIO_MIGRATION_="migration"
+
 
 export _ENABLE_LINUX_GA_CONFIG_="EnableLinuxGAInstallation:true"
 
@@ -433,6 +434,23 @@ function Prepare_Env
     PWD=$(pwd)
     
     RECOVERY_INFO_FILE="$WORK_DIR/$RecInfoFile"
+    
+    touch $RECOVERY_INFO_FILE
+    
+    Length_KeyValuePair=0
+    StartIndex=0
+    for (( i=0; i<${#RECOVERY_INFOFILE_CONTENT}; i++ )); do
+        if [[ ${RECOVERY_INFOFILE_CONTENT:$i:1} == "#" ]]
+        then
+            echo "${RECOVERY_INFOFILE_CONTENT:$start:$Length_KeyValuePair}">>"$RECOVERY_INFO_FILE"
+            ((Length_KeyValuePair=0))
+            ((StartIndex=i+1))
+        else
+            ((Length_KeyValuePair++))
+        fi
+    done
+    
+    
     HOSTINFO_FILE="$WORK_DIR/$HostInfoFile"
     
     #
@@ -484,7 +502,7 @@ function Prepare_Env
     # Verify the host-info, recovery-info & executables zip file.
     #
     Trace "Verifying extension files..."
-    local ext_files="$PWD/$RECOVERY_TOOLS_ZIPFILE $PWD/$RecInfoFile"
+    local ext_files="$PWD/$RECOVERY_TOOLS_ZIPFILE"
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         ext_files="$ext_files $PWD/$HostInfoFile"
     fi
@@ -500,14 +518,14 @@ function Prepare_Env
     #
     Trace "Copying configuration files to working directory ..."
     
-    local config_files="$PWD/$RecInfoFile"
+    local config_files=""
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         config_files="$config_files $PWD/$HostInfoFile"
-    fi
-    CopyFiles "$config_files" $WORK_DIR
-    if [ $? -ne 0 ] ; then
-        Trace_Error "Can not copy configuration files to $WORK_DIR"
-        return 1
+        CopyFiles "$config_files" $WORK_DIR
+        if [ $? -ne 0 ] ; then
+            Trace_Error "Can not copy configuration files to $WORK_DIR"
+            return 1
+        fi
     fi
     
     #
@@ -569,7 +587,7 @@ function StarRecovery
     Trace "Starting pre-recovery steps ..."
     
     RecCmd="$WORK_DIR/$AZURE_RECOVERY_UTIL"
-    RecCmdArgs="--operation recovery --recoveryinfofile $RECOVERY_INFO_FILE --hostinfofile $HOSTINFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"
+    RecCmdArgs="--operation recovery --recoveryinfofile $RECOVERY_INFO_FILE --hostinfofile $HOSTINFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS"
     
     Trace_Cmd "$RecCmd $RecCmdArgs"
     
@@ -625,10 +643,9 @@ function StartMigration
     Trace "Starting migration steps ..."
     
     RecCmd="$WORK_DIR/$AZURE_RECOVERY_UTIL"
-    RecCmdArgs="--operation migration --recoveryinfofile $RECOVERY_INFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"
-    
+    RecCmdArgs="--operation migration --recoveryinfofile $RECOVERY_INFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"    
     Trace_Cmd "$RecCmd $RecCmdArgs"
-
+    
     $RecCmd $RecCmdArgs >> $LOGFILE 2>&1
     
     RetCode=$?
@@ -685,7 +702,14 @@ function Main
         _SCENARIO_=$1
         _HOST_ID_=$2
         HYDRATION_CONFIG_SETTINGS=${3-emptyconfig}
-        CUSTOM_CONFIG_SETTINGS=${4-emptyconfig}
+        RECOVERY_INFOFILE_CONTENT=${4-emptyconfig}
+    elif [ $# -eq 5 ] ; then
+        _SCENARIO_=$1
+        _HOST_ID_=$2
+        HYDRATION_CONFIG_SETTINGS=${3-emptyconfig}
+        RECOVERY_INFOFILE_CONTENT=${4-emptyconfig}
+        CUSTOM_CONFIG_SETTINGS=${5-emptyconfig}
+       
     else
         Usage $0
         exit 1
