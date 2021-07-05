@@ -255,9 +255,9 @@ function Update-Status-To-Blob ()
                        "--errormsg"        ,$global:Exec_ErrorMsg
                        )
     
-    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $StatusCmdAgrs"
+    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $StatusCmdAgrs"
 
-    &"$global:Working_Dir\$global:AzureRecoveryUtil" $StatusCmdAgrs
+    &"$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil" $StatusCmdAgrs
 
     return $?
 }
@@ -272,9 +272,9 @@ function Upload-Execution-Log ()
                        "--logfile"         ,$global:Log_File
                       )
     
-    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $UploadCmdArgs"
+    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $UploadCmdArgs"
 
-    &"$global:Working_Dir\$global:AzureRecoveryUtil" $UploadCmdArgs
+    &"$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil" $UploadCmdArgs
 
     return $?
 }
@@ -390,7 +390,7 @@ function Execute-Recovery-Steps ()
                        )
     }
 
-    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $RecCmdArgs"
+    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $RecCmdArgs"
 
     $global:retCode = 1
 
@@ -399,7 +399,7 @@ function Execute-Recovery-Steps ()
         for( $retry = 1; ; $retry++) 
         {
 
-            $recProc = Start-Process -FilePath $global:Working_Dir\$global:AzureRecoveryUtil -ArgumentList $RecCmdArgs -PassThru
+            $recProc = Start-Process -FilePath $global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil -ArgumentList $RecCmdArgs -PassThru
 
             # Wait for the process to exit.
             if ( !$recProc.WaitForExit($MaxProcessWaitTimeSec * 1000) )
