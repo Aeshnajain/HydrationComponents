@@ -30,7 +30,10 @@ Param
     [string]$HydrationConfigSettings="emptyconfig",
 
     [Parameter(Mandatory=$false)]
-    [string]$CustomConfigSettings="emptyconfig"
+    [string]$CustomConfigSettings="emptyconfig",
+    
+    [Parameter(Mandatory=$false)]
+    [string]$RecoveryInfofileContent=""
 )
 
 #
@@ -118,7 +121,7 @@ function Verify-Downloaded-Files ( [string]$hostid )
         #
         # In case of migration there won't be hostinfo xml file.
         #
-        $Files = "$PWD\$global:AzureRecoveryToolsZipFile", "$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf"
+        $Files = "$PWD\$global:AzureRecoveryToolsZipFile"
     }
     elseif( IsGenConversion )
     {
@@ -289,6 +292,26 @@ function Prepare-Environmet ( [string]$hostid )
 
         return $false
     }
+    
+    New-Item $global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf
+    
+    $RecoveryInfofileContent=$RecoveryInfofileContent.ToCharArray()
+    $KeyValPair=""
+	
+	foreach($ch in $RecoveryInfofileContent.GetEnumerator())
+	{
+	    if($ch -eq "#")
+	    {
+		Add-Content -Path $global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf -Value $KeyValPair
+		$KeyValPair=""
+	    }
+	    else 
+	    {
+		$KeyValPair+=$ch
+	    }
+	}
+
+	    
 
     #
     # Start trace messages from here as the working directory is ready.
@@ -301,11 +324,8 @@ function Prepare-Environmet ( [string]$hostid )
     }
 
     $copy_files = $("")
-    if ( IsMigration )
-    {
-        $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
-    }
-    elseif ( IsGenConversion )
+    
+    if ( IsGenConversion )
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
     }
