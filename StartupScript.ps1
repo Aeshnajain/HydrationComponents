@@ -30,10 +30,7 @@ Param
     [string]$HydrationConfigSettings="emptyconfig",
 
     [Parameter(Mandatory=$false)]
-    [string]$CustomConfigSettings="emptyconfig",
-
-    [Parameter(Mandatory=$false)]
-    [string]$HydGithubUrl="emptyconfig"
+    [string]$CustomConfigSettings="emptyconfig"
 )
 
 #
@@ -50,7 +47,7 @@ $global:HostInfoFile                 = ""
 $global:AzureRecoveryInfoFile_Prefix = "azurerecovery"
 $global:AzureRecoveryInfoFile        = ""
 $global:AzureRecoveryToolsZipFile    = "AzureRecoveryTools.zip"
-$global:AzureRecoveryUtil            = "AzureRecoveryUtil.exe"
+$global:AzureRecoveryUtil            = "AzureRecoveryTools\AzureRecoveryUtil.exe"
 
 #
 # Status global variables used for updating execution status
@@ -255,9 +252,9 @@ function Update-Status-To-Blob ()
                        "--errormsg"        ,$global:Exec_ErrorMsg
                        )
     
-    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $StatusCmdAgrs"
+    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $StatusCmdAgrs"
 
-    &"$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil" $StatusCmdAgrs
+    &"$global:Working_Dir\$global:AzureRecoveryUtil" $StatusCmdAgrs
 
     return $?
 }
@@ -272,9 +269,9 @@ function Upload-Execution-Log ()
                        "--logfile"         ,$global:Log_File
                       )
     
-    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $UploadCmdArgs"
+    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $UploadCmdArgs"
 
-    &"$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil" $UploadCmdArgs
+    &"$global:Working_Dir\$global:AzureRecoveryUtil" $UploadCmdArgs
 
     return $?
 }
@@ -369,7 +366,8 @@ function Execute-Recovery-Steps ()
         $RecCmdArgs = @("--operation"       , "migration", 
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
+                        "--customconfigsettings" , $CustomConfigSettings
                        )
     }
 	elseif ( IsGenConversion )
@@ -377,7 +375,8 @@ function Execute-Recovery-Steps ()
 	    $RecCmdArgs = @("--operation"       , "genconversion", 
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
+                        "--customconfigsettings" , $CustomConfigSettings
                        )
 	}
     else
@@ -387,10 +386,12 @@ function Execute-Recovery-Steps ()
                         "--hostinfofile"    , $global:HostInfoFile,
                         "--workingdir"      , $global:Working_Dir,
                         "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--customconfigsettings" , $CustomConfigSettings
+
                        )
     }
 
-    Trace "$global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil $RecCmdArgs"
+    Trace "$global:Working_Dir\$global:AzureRecoveryUtil $RecCmdArgs"
 
     $global:retCode = 1
 
@@ -399,7 +400,7 @@ function Execute-Recovery-Steps ()
         for( $retry = 1; ; $retry++) 
         {
 
-            $recProc = Start-Process -FilePath $global:Working_Dir\AzureRecoveryTools\$global:AzureRecoveryUtil -ArgumentList $RecCmdArgs -PassThru
+            $recProc = Start-Process -FilePath $global:Working_Dir\$global:AzureRecoveryUtil -ArgumentList $RecCmdArgs -PassThru
 
             # Wait for the process to exit.
             if ( !$recProc.WaitForExit($MaxProcessWaitTimeSec * 1000) )
