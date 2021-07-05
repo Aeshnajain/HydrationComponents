@@ -507,7 +507,7 @@ function Execute-Recovery-Steps ()
         Trace "Error executing the recovery command. Error details: `n$_"
     }
     
-    New-Item "$global:Working_Dir\ErrorCodeFile"
+    New-Item "$global:Working_Dir\ErrorCodeFile.log"
     Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value $global:retCode 
     Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value "DummyValue" 
     Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value "DummyValue"
