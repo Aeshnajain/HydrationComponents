@@ -325,7 +325,12 @@ function Prepare-Environmet ( [string]$hostid )
 
     $copy_files = $("")
     
-    if ( IsGenConversion )
+    $copy_files = $("")
+    if ( IsMigration )
+    {
+        $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
+    }
+    elseif ( IsGenConversion )
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
 	if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
@@ -343,7 +348,7 @@ function Prepare-Environmet ( [string]$hostid )
 		Write-Error "Could not copy config files to working directory"
 
 		return $false
-	    }
+	    } 
     }
 
     
