@@ -328,18 +328,25 @@ function Prepare-Environmet ( [string]$hostid )
     if ( IsGenConversion )
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
+	if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
+	    {
+		Write-Error "Could not copy config files to working directory"
+
+		return $false
+	    }
     }
     else
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf", "$PWD\$global:HostInfoFile_Prefix-$hostid.xml")
+	if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
+	    {
+		Write-Error "Could not copy config files to working directory"
+
+		return $false
+	    }
     }
 
-    if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
-    {
-        Write-Error "Could not copy config files to working directory"
-
-        return $false
-    }
+    
     
     #
     # Update config file-paths golbal variables
