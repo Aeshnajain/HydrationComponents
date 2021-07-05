@@ -508,9 +508,9 @@ function Execute-Recovery-Steps ()
     }
     
     New-Item "$global:Working_Dir\ErrorCodeFile.log"
-    Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value $global:retCode 
-    Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value "DummyValue" 
-    Add-Content -Path "$global:Working_Dir\ErrorCodeFile" -Value "DummyValue"
+    Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value $global:retCode 
+    Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue" 
+    Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue"
 
     $global:retCode = 0
     return
