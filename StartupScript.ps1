@@ -510,7 +510,7 @@ function Execute-Recovery-Steps ()
     New-Item "$global:Working_Dir\ErrorCodeFile.log"
     #$global:retCode | Out-File -Encoding ascii -Width 2048 -Append -Force -FilePath "$global:Working_Dir\ErrorCodeFile.log"
     #"DummyData" | Out-File -Encoding ascii -Width 2048 -Append -Force -FilePath "$global:Working_Dir\ErrorCodeFile.log"
-    Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "" 
+    Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "Skip" 
     Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "1" 
     Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue" 
     Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue"
