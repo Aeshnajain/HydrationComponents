@@ -31,9 +31,9 @@ Param
 
     [Parameter(Mandatory=$false)]
     [string]$CustomConfigSettings="emptyconfig",
-
+    
     [Parameter(Mandatory=$false)]
-    [string]$HydGithubUrl="emptyconfig"
+    [string]$RecoveryInfofileContent=""
 )
 
 #
@@ -50,7 +50,7 @@ $global:HostInfoFile                 = ""
 $global:AzureRecoveryInfoFile_Prefix = "azurerecovery"
 $global:AzureRecoveryInfoFile        = ""
 $global:AzureRecoveryToolsZipFile    = "AzureRecoveryTools.zip"
-$global:AzureRecoveryUtil            = "AzureRecoveryUtil.exe"
+$global:AzureRecoveryUtil            = "AzureRecoveryTools\AzureRecoveryUtil.exe"
 
 #
 # Status global variables used for updating execution status
@@ -121,7 +121,7 @@ function Verify-Downloaded-Files ( [string]$hostid )
         #
         # In case of migration there won't be hostinfo xml file.
         #
-        $Files = "$PWD\$global:AzureRecoveryToolsZipFile", "$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf"
+        $Files = "$PWD\$global:AzureRecoveryToolsZipFile"
     }
     elseif( IsGenConversion )
     {
@@ -292,7 +292,24 @@ function Prepare-Environmet ( [string]$hostid )
 
         return $false
     }
-
+    
+    $RecoveryInfofile = "$global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf"
+    New-Item $RecoveryInfofile
+    
+    $RecoveryInfofileContent=$RecoveryInfofileContent.ToCharArray()
+    $KeyValPair = ""
+	foreach($char in $RecoveryInfofileContent.GetEnumerator())
+	{
+	    if($char -eq "#")
+	    {
+            Add-Content -Path $RecoveryInfofile -Value $KeyValPair
+            $KeyValPair=""
+	    }
+	    else 
+	    {
+		    $KeyValPair+=$char
+	    }
+	}
     #
     # Start trace messages from here as the working directory is ready.
     #
@@ -303,12 +320,10 @@ function Prepare-Environmet ( [string]$hostid )
         return $false
     }
 
+    
     $copy_files = $("")
-    if ( IsMigration )
-    {
-        $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
-    }
-    elseif ( IsGenConversion )
+    
+    if ( IsGenConversion )
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
     }
@@ -317,13 +332,16 @@ function Prepare-Environmet ( [string]$hostid )
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf", "$PWD\$global:HostInfoFile_Prefix-$hostid.xml")
     }
 
-    if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
+    if(!IsMigration)
     {
-        Write-Error "Could not copy config files to working directory"
+        if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
+        {
+            Write-Error "Could not copy config files to working directory"
 
-        return $false
+            return $false
+        }
     }
-    
+
     #
     # Update config file-paths golbal variables
     #
@@ -369,7 +387,8 @@ function Execute-Recovery-Steps ()
         $RecCmdArgs = @("--operation"       , "migration", 
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
+                        "--customconfigsettings" , $CustomConfigSettings
                        )
     }
 	elseif ( IsGenConversion )
@@ -377,7 +396,8 @@ function Execute-Recovery-Steps ()
 	    $RecCmdArgs = @("--operation"       , "genconversion", 
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
+                        "--customconfigsettings" , $CustomConfigSettings
                        )
 	}
     else
@@ -386,7 +406,9 @@ function Execute-Recovery-Steps ()
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--hostinfofile"    , $global:HostInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
+                        "--customconfigsettings" , $CustomConfigSettings
+
                        )
     }
 
@@ -473,7 +495,17 @@ function Execute-Recovery-Steps ()
     {
         Trace "Error executing the recovery command. Error details: `n$_"
     }
+    
+    $ErrorCodeFile="$global:Working_Dir/ErrorCode.log"
+    New-Item $ErrorCodeFile
+    #To manage relative Indexing
+    Add-content -Path $ErrorCodeFile -Value "SkipValue" 
+    
+    Add-content -Path $ErrorCodeFile -Value  $global:retCode 
+    Add-Content -Path $ErrorCodeFile -Value "HydErrorData: DummyData" 
+    Add-Content -Path $ErrorCodeFile -Value "HydErrorMsg: DummyMessage"
 
+    $global:retCode = 0
     return
 }
 
