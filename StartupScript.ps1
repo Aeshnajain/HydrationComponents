@@ -293,26 +293,23 @@ function Prepare-Environmet ( [string]$hostid )
         return $false
     }
     
-    New-Item $global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf
+    $RecoveryInfofile = "$global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf"
+    New-Item $RecoveryInfofile
     
     $RecoveryInfofileContent=$RecoveryInfofileContent.ToCharArray()
-    $KeyValPair=""
-	
-	foreach($ch in $RecoveryInfofileContent.GetEnumerator())
+    $KeyValPair = ""
+	foreach($char in $RecoveryInfofileContent.GetEnumerator())
 	{
-	    if($ch -eq "#")
+	    if($char -eq "#")
 	    {
-		Add-Content -Path $global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf -Value $KeyValPair
-		$KeyValPair=""
+            Add-Content -Path $RecoveryInfofile -Value $KeyValPair
+            $KeyValPair=""
 	    }
 	    else 
 	    {
-		$KeyValPair+=$ch
+		    $KeyValPair+=$char
 	    }
 	}
-
-	    
-
     #
     # Start trace messages from here as the working directory is ready.
     #
@@ -323,36 +320,28 @@ function Prepare-Environmet ( [string]$hostid )
         return $false
     }
 
-    $copy_files = $("")
     
     $copy_files = $("")
-    if ( IsMigration )
+    
+    if ( IsGenConversion )
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
-    }
-    elseif ( IsGenConversion )
-    {
-        $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf")
-	if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
-	    {
-		Write-Error "Could not copy config files to working directory"
-
-		return $false
-	    }
     }
     else
     {
         $copy_files = $("$PWD\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf", "$PWD\$global:HostInfoFile_Prefix-$hostid.xml")
-	if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
-	    {
-		Write-Error "Could not copy config files to working directory"
-
-		return $false
-	    } 
     }
 
-    
-    
+    if(!IsMigration)
+    {
+        if ( !$( Copy-Files-To-WorkingDir $copy_files ) )
+        {
+            Write-Error "Could not copy config files to working directory"
+
+            return $false
+        }
+    }
+
     #
     # Update config file-paths golbal variables
     #
@@ -417,7 +406,7 @@ function Execute-Recovery-Steps ()
                         "--recoveryinfofile", $global:AzureRecoveryInfoFile,
                         "--hostinfofile"    , $global:HostInfoFile,
                         "--workingdir"      , $global:Working_Dir,
-                        "--hydrationconfigsettings" , $HydrationConfigSettings
+                        "--hydrationconfigsettings" , $HydrationConfigSettings,
                         "--customconfigsettings" , $CustomConfigSettings
 
                        )
@@ -507,13 +496,14 @@ function Execute-Recovery-Steps ()
         Trace "Error executing the recovery command. Error details: `n$_"
     }
     
-    New-Item "$global:Working_Dir\ErrorCodeFile.log"
-    #$global:retCode | Out-File -Encoding ascii -Width 2048 -Append -Force -FilePath "$global:Working_Dir\ErrorCodeFile.log"
-    #"DummyData" | Out-File -Encoding ascii -Width 2048 -Append -Force -FilePath "$global:Working_Dir\ErrorCodeFile.log"
-    Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "Skip" 
-    Add-content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "1" 
-    Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue" 
-    Add-Content -Path "$global:Working_Dir\ErrorCodeFile.log" -Value "DummyValue"
+    $ErrorCodeFile="$global:Working_Dir/ErrorCode.log"
+    New-Item $ErrorCodeFile
+    #To manage relative Indexing
+    Add-content -Path $ErrorCodeFile -Value "SkipValue" 
+    
+    Add-content -Path $ErrorCodeFile -Value  $global:retCode 
+    Add-Content -Path $ErrorCodeFile -Value "HydErrorData: DummyData" 
+    Add-Content -Path $ErrorCodeFile -Value "HydErrorMsg: DummyMessage"
 
     $global:retCode = 0
     return
