@@ -435,8 +435,8 @@ function Prepare_Env
     
     RECOVERY_INFO_FILE="$WORK_DIR/$RecInfoFile"
     
+    #Creation of $RecInfoFile in the $WORK_DIR
     touch $RECOVERY_INFO_FILE
-    
     Length_KeyValuePair=0
     StartIndex=0
     for (( i=0; i<${#RECOVERY_INFOFILE_CONTENT}; i++ )); do
@@ -449,7 +449,6 @@ function Prepare_Env
             ((Length_KeyValuePair++))
         fi
     done
-    
     
     HOSTINFO_FILE="$WORK_DIR/$HostInfoFile"
     
@@ -649,7 +648,15 @@ function StartMigration
     $RecCmd $RecCmdArgs >> $LOGFILE 2>&1
     
     RetCode=$?
+    #Creation of ErrorCode.log file to propogate the error
+    ERROR_CODE_FILE="$WORK_DIR/ErrorCode.log"
     
+    touch $ERROR_CODE_FILE
+  
+    echo "$RetCode">>"$ERROR_CODE_FILE"
+    echo "HydErrorData:DummyData">>"$ERROR_CODE_FILE"
+    echo "HydErrorMsg:DummyMessage">>"$ERROR_CODE_FILE"
+
     if (( $RetCode != 0 )) ; then
         EXEC_ERROR_MSG="Recovery tool exited unexpectedly with error code $RetCode"
         EXEC_ERROR="1"
@@ -660,7 +667,7 @@ function StartMigration
         Update_Status
         Upload_Log
         
-        return 1
+        return 0
     fi
 
     Trace "Migration steps executed successfully"

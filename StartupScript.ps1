@@ -292,10 +292,9 @@ function Prepare-Environmet ( [string]$hostid )
 
         return $false
     }
-    
+    #Creation of RecoveryInfo file
     $RecoveryInfofile = "$global:Working_Dir\$global:AzureRecoveryInfoFile_Prefix-$hostid.conf"
     New-Item $RecoveryInfofile
-    
     $RecoveryInfofileContent=$RecoveryInfofileContent.ToCharArray()
     $KeyValPair = ""
 	foreach($char in $RecoveryInfofileContent.GetEnumerator())
@@ -303,11 +302,11 @@ function Prepare-Environmet ( [string]$hostid )
 	    if($char -eq "#")
 	    {
             Add-Content -Path $RecoveryInfofile -Value $KeyValPair
-            $KeyValPair=""
+            $KeyValPair = ""
 	    }
 	    else 
 	    {
-		    $KeyValPair+=$char
+		    $KeyValPair += $char
 	    }
 	}
     #
@@ -495,12 +494,12 @@ function Execute-Recovery-Steps ()
     {
         Trace "Error executing the recovery command. Error details: `n$_"
     }
-    
-    $ErrorCodeFile="$global:Working_Dir/ErrorCode.log"
+    #Creation of ErrorCode.log file to propogate the errors
+    $ErrorCodeFile = "$global:Working_Dir/ErrorCode.log"
     New-Item $ErrorCodeFile
     #To manage relative Indexing
-    Add-content -Path $ErrorCodeFile -Value "SkipValue" 
-    
+    Add-content -Path $ErrorCodeFile -Value "SkipValue"
+    #Adding error details to ErrorCode.log file
     Add-content -Path $ErrorCodeFile -Value  $global:retCode 
     Add-Content -Path $ErrorCodeFile -Value "HydErrorData: DummyData" 
     Add-Content -Path $ErrorCodeFile -Value "HydErrorMsg: DummyMessage"
