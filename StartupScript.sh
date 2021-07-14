@@ -507,7 +507,7 @@ function Prepare_Env
     # Verify the host-info, recovery-info & executables zip file.
     #
     Trace "Verifying extension files..."
-    local ext_files="$PWD/$RECOVERY_TOOLS_ZIPFILE $PWD/$RecInfoFile"
+    local ext_files="$PWD/$RECOVERY_TOOLS_ZIPFILE"
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         ext_files="$ext_files $PWD/$HostInfoFile"
     fi
