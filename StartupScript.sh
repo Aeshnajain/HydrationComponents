@@ -41,6 +41,7 @@ export RECOVERY_INFO_FILE=""
 export HOSTINFO_FILE=""
 export HYDRATION_CONFIG_SETTINGS="emptyconfig"
 export CUSTOM_CONFIG_SETTINGS="emptyconfig"
+export RECOVERY_INFOFILE_CONTENT=""
 export CUSTOM_SCRIPT=0
 
 #
@@ -434,6 +435,22 @@ function Prepare_Env
     PWD=$(pwd)
     
     RECOVERY_INFO_FILE="$WORK_DIR/$RecInfoFile"
+
+    #Creation of $RecInfoFile in the $WORK_DIR
+    touch $RECOVERY_INFO_FILE
+    Length_KeyValuePair=0
+    StartIndex=0
+    for (( i=0; i<${#RECOVERY_INFOFILE_CONTENT}; i++ )); do
+        if [[ ${RECOVERY_INFOFILE_CONTENT:$i:1} == "#" ]]
+        then
+            echo "${RECOVERY_INFOFILE_CONTENT:$StartIndex:$Length_KeyValuePair}">>"$RECOVERY_INFO_FILE"
+            ((Length_KeyValuePair=0))
+            ((StartIndex=i+1))
+        else
+            ((Length_KeyValuePair++))
+        fi
+    done
+
     HOSTINFO_FILE="$WORK_DIR/$HostInfoFile"
     
     #
@@ -506,7 +523,7 @@ function Prepare_Env
     #
     Trace "Copying configuration files to working directory ..."
     local num_of_files="$(ls | wc -l)"
-    local config_files="$PWD/$RecInfoFile"
+    local config_files=""
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         config_files="$config_files $PWD/$HostInfoFile"
         CUSTOM_SCRIPT=$(($nums_of_files - 9))
@@ -642,6 +659,15 @@ function StartMigration
     
     RetCode=$?
     
+    #Creation of ErrorCode.log file to propogate the error
+    ERROR_CODE_FILE="$WORK_DIR/ErrorCode.log"
+    
+    touch $ERROR_CODE_FILE
+  
+    echo "$RetCode">>"$ERROR_CODE_FILE"
+    echo "HydErrorData:DummyData">>"$ERROR_CODE_FILE"
+    echo "HydErrorMsg:DummyMessage">>"$ERROR_CODE_FILE"
+
     if (( $RetCode != 0 )) ; then
         EXEC_ERROR_MSG="Recovery tool exited unexpectedly with error code $RetCode"
         EXEC_ERROR="1"
@@ -652,7 +678,7 @@ function StartMigration
         Update_Status
         Upload_Log
         
-        return 1
+        return 0
     fi
 
     Trace "Migration steps executed successfully"
@@ -695,6 +721,13 @@ function Main
         _HOST_ID_=$2
         HYDRATION_CONFIG_SETTINGS=${3-emptyconfig}
         CUSTOM_CONFIG_SETTINGS=${4-emptyconfig}
+        RECOVERY_INFOFILE_CONTENT=${4-emptyconfig}
+    elif [ $# -eq 5 ] ; then
+        _SCENARIO_=$1
+        _HOST_ID_=$2
+        HYDRATION_CONFIG_SETTINGS=${3-emptyconfig}
+        RECOVERY_INFOFILE_CONTENT=${4-emptyconfig}
+        CUSTOM_CONFIG_SETTINGS=${5-emptyconfig}
     else
         Usage $0
         exit 1
