@@ -526,16 +526,16 @@ function Prepare_Env
     local config_files=""
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         config_files="$config_files $PWD/$HostInfoFile"
+        CopyFiles "$config_files" $WORK_DIR
+        if [ $? -ne 0 ] ; then
+            Trace_Error "Can not copy configuration files to $WORK_DIR"
+            return 1
+        fi
         CUSTOM_SCRIPT=$(($nums_of_files - 9))
     else
         CUSTOM_SCRIPT=$(($nums_of_files - 8))
     fi
     rsync -av --exclude='StartupScript.sh' *.sh $WORK_DIR/user_files
-    CopyFiles "$config_files" $WORK_DIR
-    if [ $? -ne 0 ] ; then
-        Trace_Error "Can not copy configuration files to $WORK_DIR"
-        return 1
-    fi
     
     #
     # Update Execution Status
