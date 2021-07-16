@@ -42,6 +42,8 @@ export HOSTINFO_FILE=""
 export HYDRATION_CONFIG_SETTINGS="emptyconfig"
 export CUSTOM_CONFIG_SETTINGS="emptyconfig"
 export RECOVERY_INFOFILE_CONTENT=""
+export CUSTOM_SCRIPT=0
+
 #
 # Status global variable
 # 
@@ -58,7 +60,6 @@ _HOST_ID_=""
 _SCENARIO_=""
 _SCENARIO_RECOVERY_="recovery"
 _SCENARIO_MIGRATION_="migration"
-
 
 export _ENABLE_LINUX_GA_CONFIG_="EnableLinuxGAInstallation:true"
 
@@ -434,7 +435,7 @@ function Prepare_Env
     PWD=$(pwd)
     
     RECOVERY_INFO_FILE="$WORK_DIR/$RecInfoFile"
-    
+
     #Creation of $RecInfoFile in the $WORK_DIR
     touch $RECOVERY_INFO_FILE
     Length_KeyValuePair=0
@@ -449,7 +450,7 @@ function Prepare_Env
             ((Length_KeyValuePair++))
         fi
     done
-    
+
     HOSTINFO_FILE="$WORK_DIR/$HostInfoFile"
     
     #
@@ -465,29 +466,34 @@ function Prepare_Env
     # Downlaod and extract Linux Guest Agent files.
     # Timeout: 300 seconds
     #
-    if [[ $HYDRATION_CONFIG_SETTINGS =~ .*$_ENABLE_LINUX_GA_CONFIG_.* ]]; then
-        # Using curl instead of wget as it communicates through api.github.com while
-        # wget uses codeload.github.com and may require additional NSG rules allowance.
-        # Timeout after 300 seconds
-        curl -LO "https://github.com/Azure/WALinuxAgent/archive/master.zip" -m 300
-        if [[ $? -ne 0 ]]; then
-            Trace_Error "Could not download WALinuxAgent zip file from github."
-        else
-            Trace "Successfully downloaded WALinuxAgent zip file."
-            # Extract master.zip into WALinuxAgentASR
-            Extract_ZipFile "$PWD/$LINUX_GA_TOOLS_ZIPFILE" $LINUX_GA_DIR
-            if [ $? -ne 0 ] ; then
-                Trace_Error "Linux guest agent binaries extraction failed."
+    USER_DISABLE_GA_CONFIG="EnableGA:false"
+    if [[ $CUSTOM_CONFIG_SETTINGS =~ .*$USER_DISABLE_GA_CONFIG.* ]]; then
+        Trace "User disabled Linux Guest Agent Installation.\n"
+    else
+        Trace "user enabled Linux Guest Agent Installation"
+        if [[ $HYDRATION_CONFIG_SETTINGS =~ .*$_ENABLE_LINUX_GA_CONFIG_.* ]]; then
+            # Using curl instead of wget as it communicates through api.github.com while
+            # wget uses codeload.github.com and may require additional NSG rules allowance.
+            # Timeout after 300 seconds
+            curl -LO "https://github.com/Azure/WALinuxAgent/archive/master.zip" -m 300
+            if [[ $? -ne 0 ]]; then
+                Trace_Error "Could not download WALinuxAgent zip file from github."
             else
-                # Enable execution permissions on downloaded guest agent files.
-                EnableExe_Permissions  $LINUX_GA_DIR
+                Trace "Successfully downloaded WALinuxAgent zip file."
+                # Extract master.zip into WALinuxAgentASR
+                Extract_ZipFile "$PWD/$LINUX_GA_TOOLS_ZIPFILE" $LINUX_GA_DIR
                 if [ $? -ne 0 ] ; then
-                    Trace_Error "Could not enable execute permission for one of the executables/scripts in Linux GA directory".
+                    Trace_Error "Linux guest agent binaries extraction failed."
+                else
+                    # Enable execution permissions on downloaded guest agent files.
+                    EnableExe_Permissions  $LINUX_GA_DIR
+                    if [ $? -ne 0 ] ; then
+                        Trace_Error "Could not enable execute permission for one of the executables/scripts in Linux GA directory".
+                    fi
                 fi
             fi
         fi
     fi
-
     #
     # Set execute permission to the executables/scripts after extraction
     #
@@ -516,7 +522,7 @@ function Prepare_Env
     # Copy host-info & recovery-info files to working directory
     #
     Trace "Copying configuration files to working directory ..."
-    
+    local num_of_files="$(ls | wc -l)"
     local config_files=""
     if [ "$_SCENARIO_" = "$_SCENARIO_RECOVERY_" ]; then
         config_files="$config_files $PWD/$HostInfoFile"
@@ -525,7 +531,11 @@ function Prepare_Env
             Trace_Error "Can not copy configuration files to $WORK_DIR"
             return 1
         fi
+        CUSTOM_SCRIPT=$(($nums_of_files - 9))
+    else
+        CUSTOM_SCRIPT=$(($nums_of_files - 8))
     fi
+    rsync -av --exclude='StartupScript.sh' *.sh $WORK_DIR/user_files
     
     #
     # Update Execution Status
@@ -586,7 +596,7 @@ function StarRecovery
     Trace "Starting pre-recovery steps ..."
     
     RecCmd="$WORK_DIR/$AZURE_RECOVERY_UTIL"
-    RecCmdArgs="--operation recovery --recoveryinfofile $RECOVERY_INFO_FILE --hostinfofile $HOSTINFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS"
+    RecCmdArgs="--operation recovery --recoveryinfofile $RECOVERY_INFO_FILE --hostinfofile $HOSTINFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"
     
     Trace_Cmd "$RecCmd $RecCmdArgs"
     
@@ -642,9 +652,9 @@ function StartMigration
     Trace "Starting migration steps ..."
     
     RecCmd="$WORK_DIR/$AZURE_RECOVERY_UTIL"
-    RecCmdArgs="--operation migration --recoveryinfofile $RECOVERY_INFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"    
-    Trace_Cmd "$RecCmd $RecCmdArgs"
+    RecCmdArgs="--operation migration --recoveryinfofile $RECOVERY_INFO_FILE --workingdir $WORK_DIR --hydrationconfigsettings $HYDRATION_CONFIG_SETTINGS --customconfigsettings $CUSTOM_CONFIG_SETTINGS"
     
+    Trace_Cmd "$RecCmd $RecCmdArgs"
     $RecCmd $RecCmdArgs >> $LOGFILE 2>&1
     
     RetCode=$?
@@ -716,7 +726,6 @@ function Main
         HYDRATION_CONFIG_SETTINGS=${3-emptyconfig}
         RECOVERY_INFOFILE_CONTENT=${4-emptyconfig}
         CUSTOM_CONFIG_SETTINGS=${5-emptyconfig}
-       
     else
         Usage $0
         exit 1
